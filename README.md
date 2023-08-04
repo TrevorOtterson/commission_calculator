@@ -3,7 +3,9 @@ Commission Calculator is a Python program that will calculate the total amount o
 
 ## Requirements
 python 3+
+
 `json` module (built-in)
+
 `functools.reduce` function (built-in)
 
 ## Getting Started
