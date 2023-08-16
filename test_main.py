@@ -1,62 +1,41 @@
-# test_main.py
 import json
-from main import calculate_commission, group_and_calculate
-from functools import reduce
 import pytest
+from commission_calc import CC
 
-def load_json_data(json_file):
-    with open(json_file, "r") as file:
-        return json.load(file)
+# Load test data from JSON files
+with open("data/deals.json", "r") as deal_file:
+    test_deal_data = json.load(deal_file)
+with open("data/products.json", "r") as product_file:
+    test_product_data = json.load(product_file)
 
-# Load data from json files
-deal_data = load_json_data("data/deals.json")
-product_data = load_json_data("data/products.json")
+# pytest fixture is used to initialize the commission calculator with test data
+@pytest.fixture
+def commission_calculator():
+    return CC(test_deal_data, test_product_data)
 
-# Define test cases for calculate_commission
-def test_calculate_commission():
-    # Test case for a sale without 2x multiplier
-    sale = {
-        "id": 10001,
-        "sales_rep_name": "David",
-        "date": "2023-04-15",
-        "quantity_products_sold": 3,
-        "product_id": 20007,
-        "has_2x_multiplier": 0
+# calculates all commissions for all sales reps
+def test_calc_all(commission_calculator):
+    valid_data = {
+        'Brad': 116880.0,
+        'Carol': 5580.0,
+        'David': 261430.00000000006,
+        'Ian': 92370.0,
+        'Jo': 343720.00000000006,
+        'Poppy': 247220.0
     }
-    assert calculate_commission(sale, product_data) == 0.11 * 13000 * 3
+    commissions = commission_calculator.calc_all()
+    assert valid_data == commissions
 
-    # Test case for a sale with 2x multiplier
-    sale = {
-        "id": 10005,
-        "sales_rep_name": "Jo",
-        "date": "2023-03-15",
-        "quantity_products_sold": 3,
-        "product_id": 20004,
-        "has_2x_multiplier": 1
-    }
-    assert calculate_commission(sale, product_data) == 2 * 0.08 * 3000 * 3
+# tests that the commission calculator returns the correct commission for a single sales rep
+def test_get_commissions_for_sales_rep(commission_calculator):
+    sales_rep_name = "David"  # Replace with an actual sales rep name from your test data
+    start_date = "2023-01-01"
+    end_date = "2023-01-31"
 
-# Define test case for group_and_calculate
-def test_group_and_calculate():
-    # Test case with a single sale
-    deals_data = [
-        {
-            "id": 10001,
-            "sales_rep_name": "David",
-            "date": "2023-04-15",
-            "quantity_products_sold": 3,
-            "product_id": 20007,
-            "has_2x_multiplier": 0
-        }
-    ]
-    commission_by_sales_rep = reduce(group_and_calculate, deals_data, {})
-    assert commission_by_sales_rep == {
-        "David": {
-            "commission": 0.11 * 13000 * 3,
-            "dates": ("2023-04-15", "2023-04-15")
-        }
-    }
+    commission = commission_calculator.calculate_commission(sales_rep_name, start_date, end_date)
+    assert commission == 1380
 
-# Run the tests
-if __name__ == "__main__":
+
+# Run tests
+if __name__ == '__main__':
     pytest.main()
